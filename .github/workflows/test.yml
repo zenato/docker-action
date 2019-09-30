@@ -1,0 +1,31 @@
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  test-publish-docker:
+    runs-on: ubuntu-latest
+    name: Publish docker image for test
+    steps:
+      - name: Configure environment
+        id: config
+        run: |
+          VERSION=$(echo $GITHUB_REF | sed -e "s/^refs\/tags\/v//")
+          echo ::set-output name=version::$VERSION
+
+      - name: Fetch repository
+        uses: actions/checkout@master
+
+      - name: Publish docker
+        id: docker
+        uses: zenato/docker-action@master
+        with:
+          username: ${{ secrets.TEST_DOCKER_USERNAME }}
+          password: ${{ secrets.TEST_DOCKER_PASSWORD }}
+          repository: zenato/test-action/test-app
+          registry: docker.pkg.github.com
+          tag: ${{ steps.config.outputs.version }}
+
+      - name: Result tagged image
+        run: echo "${{steps.docker.outputs.image}}"
